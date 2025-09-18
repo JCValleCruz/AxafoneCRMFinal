@@ -1,16 +1,13 @@
 {
-    "name": "Axafone CRM",
-    "short_name": "AxafoneCRM",
+    "name": "form",
+    "short_name": "form",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Axafone CRM - Sistema de gestión comercial",
+    "description": "Axafone CRM",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
-    "permissions": [
-        "geolocation"
-    ],
     "icons": [
         {
             "src": "icons/Icon-192.png",

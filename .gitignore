@@ -34,3 +34,4 @@ flutter_service_worker.js
 *.map
 build/
 .dart_tool/
+.vercel
