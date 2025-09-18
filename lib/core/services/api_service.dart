@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../shared/models/user.dart';
 import '../../shared/models/form_submission.dart';
@@ -179,31 +180,63 @@ class ApiService {
         queryParameters: queryParams,
       );
 
+      print('Realizando búsqueda en: $uri');
+
       final response = await http.get(uri, headers: _headers);
+
+      print('Status code: ${response.statusCode}');
+      print('Response body length: ${response.body.length}');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => _convertToClientSearchResult(json)).toList();
+        print('Número de resultados: ${data.length}');
+
+        final results = <ClientSearchResult>[];
+        for (int i = 0; i < data.length; i++) {
+          try {
+            final result = _convertToClientSearchResult(data[i]);
+            results.add(result);
+          } catch (e) {
+            print('Error procesando item $i: $e');
+            print('Item problemático: ${data[i]}');
+            // Continuar con el siguiente item en lugar de fallar todo
+          }
+        }
+        print('Resultados procesados exitosamente: ${results.length}');
+        return results;
       } else {
-        throw Exception('Error en la búsqueda');
+        throw Exception('Error en la búsqueda: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
+      print('Error completo en searchClients: $e');
       throw Exception('Error de conexión: $e');
     }
   }
 
   // Helper para convertir la respuesta de la API al modelo ClientSearchResult
   static ClientSearchResult _convertToClientSearchResult(Map<String, dynamic> json) {
+    // Debug: imprimir la estructura JSON recibida
+    print('JSON recibido del servidor: $json');
+
+    // Filtrar campos problemáticos de ubicación si existen
+    final filteredJson = Map<String, dynamic>.from(json);
+    filteredJson.removeWhere((key, value) =>
+      key == 'latitude' ||
+      key == 'longitude' ||
+      key == 'location_address' ||
+      key == 'direccion_real'
+    );
+
     return ClientSearchResult(
-      id: json['id'] as int,
-      cliente: json['cliente'] ?? json['razonSocial'] ?? '',
-      cif: json['cif'] ?? '',
-      direccion: json['direccion'] ?? '',
-      personaContacto: json['persona_contacto'] ?? '',
-      telefonoContacto: json['telefono_contacto'] ?? json['telefono'] ?? '',
-      emailContacto: json['email_contacto'] ?? json['email'] ?? '',
-      createdAt: json['created_at'] != null
-        ? DateTime.parse(json['created_at'])
+      id: filteredJson['id'] as int,
+      cliente: filteredJson['cliente'] ?? filteredJson['razonSocial'] ?? '',
+      cif: filteredJson['cif'] ?? '',
+      direccion: filteredJson['direccion'] ?? '',
+      personaContacto: filteredJson['persona_contacto'] ?? '',
+      telefonoContacto: filteredJson['telefono_contacto'] ?? filteredJson['telefono'] ?? '',
+      emailContacto: filteredJson['email_contacto'] ?? filteredJson['email'] ?? '',
+      createdAt: filteredJson['created_at'] != null
+        ? DateTime.parse(filteredJson['created_at'])
         : DateTime.now(),
     );
   }
@@ -217,16 +250,73 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
-        print('API response JSON: $jsonData');
-        final formSubmission = FormSubmission.fromJson(jsonData);
+        print('API response JSON antes de limpiar: $jsonData');
+
+        // LIMPIAR DATOS PROBLEMÁTICOS INMEDIATAMENTE
+        final cleanedData = _cleanLocationData(jsonData);
+        print('API response JSON después de limpiar: $cleanedData');
+
+        final formSubmission = FormSubmission.fromJson(cleanedData);
         print('Parsed FormSubmission - cliente: ${formSubmission.cliente}, cif: ${formSubmission.cif}');
         return formSubmission;
       } else {
-        throw Exception('Error al obtener formulario');
+        throw Exception('Error al obtener formulario: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
+      print('Error completo en getFormById: $e');
       throw Exception('Error de conexión: $e');
     }
+  }
+
+  // Helper para limpiar datos de ubicación problemáticos
+  static Map<String, dynamic> _cleanLocationData(Map<String, dynamic> data) {
+    final cleaned = Map<String, dynamic>.from(data);
+
+    // En WEB, limpiar TODOS los campos de ubicación para evitar problemas
+    if (kIsWeb) {
+      print('🌐 PLATAFORMA WEB: Limpiando TODOS los campos de ubicación');
+      const webLocationFields = [
+        'latitude',
+        'longitude',
+        'location_address',
+        'direccion_real'
+      ];
+
+      for (final field in webLocationFields) {
+        if (cleaned[field] != null) {
+          print('🧹 Removiendo $field en web: ${cleaned[field]}');
+          cleaned[field] = null;
+        }
+      }
+    } else {
+      // En MÓVIL, solo limpiar valores específicamente problemáticos
+      print('📱 PLATAFORMA MÓVIL: Limpieza selectiva de campos de ubicación');
+      const locationFields = [
+        'latitude',
+        'longitude',
+        'location_address',
+        'direccion_real'
+      ];
+
+      for (final field in locationFields) {
+        if (cleaned[field] != null) {
+          final value = cleaned[field].toString();
+          print('Verificando campo $field: $value');
+
+          // Limpiar valores problemáticos específicos
+          if (value.contains('33.00000000') ||
+              value.contains('Lat:') ||
+              value.contains('Lng:') ||
+              value == '33.0' ||
+              value == '33') {
+            print('Removiendo $field problemático: $value');
+            cleaned[field] = null;
+          }
+        }
+      }
+    }
+
+    return cleaned;
   }
 
   // Reports

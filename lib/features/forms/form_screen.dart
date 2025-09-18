@@ -846,18 +846,6 @@ class _FormScreenState extends State<FormScreen> {
             ),
             const SizedBox(height: 16),
             FormFieldWrapper(
-              label: 'Licencias Registro Horario',
-              child: TextFormField(
-                controller: _numLicenciasControlHorarioController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  hintText: 'Número de licencias',
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            FormFieldWrapper(
               label: 'Fecha Renovación Control Horario',
               child: TextFormField(
                 controller: _fechaRenovacionControlHorarioController,
@@ -870,6 +858,21 @@ class _FormScreenState extends State<FormScreen> {
               ),
             ),
           ],
+
+          const SizedBox(height: 16),
+
+          // Licencias Control Horario - FUERA del checkbox de Registros de Horario
+          FormFieldWrapper(
+            label: 'Licencias Control Horario',
+            child: TextFormField(
+              controller: _numLicenciasControlHorarioController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(
+                hintText: 'Número de licencias',
+              ),
+            ),
+          ),
 
           _buildSwitchField(
             'Mantenimiento Informático',
@@ -905,24 +908,6 @@ class _FormScreenState extends State<FormScreen> {
             ),
           ),
 
-          // Mostrar campo de fecha solo si hay licencias Office
-          if (_licenciasOfficeController.text.isNotEmpty &&
-              int.tryParse(_licenciasOfficeController.text) != null &&
-              int.parse(_licenciasOfficeController.text) > 0) ...[
-            const SizedBox(height: 16),
-            FormFieldWrapper(
-              label: 'Fecha Renovación Office',
-              child: TextFormField(
-                controller: _fechaRenovacionOfficeController,
-                decoration: const InputDecoration(
-                  hintText: 'DD/MM/AAAA',
-                  suffixIcon: Icon(Icons.calendar_today),
-                ),
-                readOnly: true,
-                onTap: () => _selectDate(context, _fechaRenovacionOfficeController),
-              ),
-            ),
-          ],
 
           // Campos específicos para FIDELIZACIÓN
           if (showFidelizacionFields) ...[
@@ -974,6 +959,22 @@ class _FormScreenState extends State<FormScreen> {
               (value) => setState(() => _admiteLlamadaNps = value),
             ),
           ],
+
+          // Fecha Renovación Office - ÚLTIMO CAMPO del formulario
+          const SizedBox(height: 24),
+
+          FormFieldWrapper(
+            label: 'Fecha Renovación Licencias Office',
+            child: TextFormField(
+              controller: _fechaRenovacionOfficeController,
+              decoration: const InputDecoration(
+                hintText: 'DD/MM/AAAA',
+                suffixIcon: Icon(Icons.calendar_today),
+              ),
+              readOnly: true,
+              onTap: () => _selectDate(context, _fechaRenovacionOfficeController),
+            ),
+          ),
         ],
       ),
     );
@@ -1117,6 +1118,7 @@ class _FormScreenState extends State<FormScreen> {
         ciberseguridad: _ciberseguridad,
         registrosHorario: _registrosHorario,
         proveedorControlHorario: _proveedorControlHorarioController.text.isEmpty ? null : _proveedorControlHorarioController.text,
+        numLicenciasControlHorario: _numLicenciasControlHorarioController.text.isEmpty ? null : int.tryParse(_numLicenciasControlHorarioController.text),
         fechaRenovacionControlHorario: _fechaRenovacionControlHorarioController.text.isEmpty ? null : _fechaRenovacionControlHorarioController.text,
         mantenimientoInformatico: _mantenimientoInformatico,
         proveedorCorreo: _proveedorCorreoController.text.isEmpty ? null : _proveedorCorreoController.text,

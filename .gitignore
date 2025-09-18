@@ -1,39 +1,28 @@
 # Flutter
-/build/
-/.dart_tool/
-/.fleet
-/.idx
-/.packages
-/.pub-cache/
-/.pub/
-/pubspec.lock
-
-# Web build (allow built web folder for deployment)
-# /web/
+build/
+.dart_tool/
+.packages
+.pub/
+.metadata
 
 # IDE
-/.vscode/
-/.idea/
-*.swp
-*.swo
-*~
+.idea/
+.vscode/
+*.iml
 
 # OS
 .DS_Store
 Thumbs.db
 
+# Android
+android/app/build/
+android/.gradle/
+android/gradle/
+android/gradlew*
+android/local.properties
+
+# Web
+web/assets/
+
 # Logs
 *.log
-
-# Environment
-.env
-.env.local
-.env.production
-
-# Vercel
-/.vercel/
-
-# Build outputs
-*.js.map
-*.js
-*.g.dart
