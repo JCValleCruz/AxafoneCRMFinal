@@ -30,6 +30,7 @@ class _FormScreenState extends State<FormScreen> {
   int _currentStep = 0;
   final int _totalSteps = 4;
   bool _isLoading = false;
+  bool _isSubmitting = false; // Flag para prevenir múltiples envíos
 
   // Form Controllers
   final _clienteController = TextEditingController();
@@ -201,7 +202,10 @@ class _FormScreenState extends State<FormScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _isSubmitting = false; // Restablecer flag
+        });
       }
     }
   }
@@ -286,15 +290,18 @@ class _FormScreenState extends State<FormScreen> {
               else ...[
                 _buildProgressIndicator(),
                 Expanded(
-                  child: PageView(
-                    controller: _pageController,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: [
-                      _buildClientDataStep(),
-                      _buildContactDataStep(),
-                      _buildBusinessDataStep(),
-                      _buildServicesDataStep(),
-                    ],
+                  child: Form(
+                    key: _formKey,
+                    child: PageView(
+                      controller: _pageController,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        _buildClientDataStep(),
+                        _buildContactDataStep(),
+                        _buildBusinessDataStep(),
+                        _buildServicesDataStep(),
+                      ],
+                    ),
                   ),
                 ),
                 _buildNavigationButtons(),
@@ -447,9 +454,7 @@ class _FormScreenState extends State<FormScreen> {
   Widget _buildClientDataStep() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
-      child: Form(
-        key: _formKey,
-        child: Column(
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
@@ -520,7 +525,6 @@ class _FormScreenState extends State<FormScreen> {
 
             // Campo dirección real ocultado - se llena automáticamente con GPS
           ],
-        ),
       ),
     );
   }
@@ -861,7 +865,15 @@ class _FormScreenState extends State<FormScreen> {
 
           const SizedBox(height: 16),
 
-          // Licencias Control Horario - FUERA del checkbox de Registros de Horario
+          _buildSwitchField(
+            'Mantenimiento Informático',
+            _mantenimientoInformatico,
+            (value) => setState(() => _mantenimientoInformatico = value),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Licencias Control Horario - DESPUÉS de Mantenimiento Informático
           FormFieldWrapper(
             label: 'Licencias Control Horario',
             child: TextFormField(
@@ -872,12 +884,6 @@ class _FormScreenState extends State<FormScreen> {
                 hintText: 'Número de licencias',
               ),
             ),
-          ),
-
-          _buildSwitchField(
-            'Mantenimiento Informático',
-            _mantenimientoInformatico,
-            (value) => setState(() => _mantenimientoInformatico = value),
           ),
 
           const SizedBox(height: 16),
@@ -1084,12 +1090,51 @@ class _FormScreenState extends State<FormScreen> {
   }
 
   Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) return;
+    print('_submitForm llamado');
+
+    // Prevenir múltiples envíos
+    if (_isSubmitting) {
+      print('_submitForm ya en progreso, ignorando...');
+      return;
+    }
+
+    _isSubmitting = true;
+    print('_formKey: $_formKey');
+    print('_formKey.currentState: ${_formKey.currentState}');
+
+    // Si el form key no está listo, esperar un poco y reintentar
+    if (_formKey.currentState == null) {
+      print('Error: _formKey.currentState es null, esperando...');
+
+      // Esperar un frame y reintentar
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      if (_formKey.currentState == null) {
+        print('Error: _formKey.currentState sigue siendo null después de esperar');
+        _isSubmitting = false; // Restablecer flag
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error: Formulario no inicializado. Refresque la página e intente de nuevo.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        return;
+      }
+    }
+
+    if (!_formKey.currentState!.validate()) {
+      _isSubmitting = false; // Restablecer flag si falla validación
+      return;
+    }
 
     setState(() => _isLoading = true);
 
     try {
-      final user = SessionService.currentUser!;
+      // Verificar que el usuario esté logueado
+      final user = SessionService.currentUser;
+      if (user == null) {
+        throw Exception('Usuario no autenticado');
+      }
 
       final formSubmission = FormSubmission(
         userId: user.id,
@@ -1152,7 +1197,10 @@ class _FormScreenState extends State<FormScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _isSubmitting = false; // Restablecer flag
+        });
       }
     }
   }
