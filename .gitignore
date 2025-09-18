@@ -1,0 +1,39 @@
+# Flutter
+/build/
+/.dart_tool/
+/.fleet
+/.idx
+/.packages
+/.pub-cache/
+/.pub/
+/pubspec.lock
+
+# Web build (allow built web folder for deployment)
+# /web/
+
+# IDE
+/.vscode/
+/.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Vercel
+/.vercel/
+
+# Build outputs
+*.js.map
+*.js
+*.g.dart
