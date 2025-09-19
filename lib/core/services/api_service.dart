@@ -328,49 +328,34 @@ class ApiService {
   static Map<String, dynamic> _cleanLocationData(Map<String, dynamic> data) {
     final cleaned = Map<String, dynamic>.from(data);
 
-    // En WEB, limpiar TODOS los campos de ubicación para evitar problemas
-    if (kIsWeb) {
-      print('🌐 PLATAFORMA WEB: Limpiando TODOS los campos de ubicación');
-      const webLocationFields = [
-        'latitude',
-        'longitude',
-        'location_address',
-        'direccion_real'
-      ];
+    // Aplicar la misma lógica selectiva tanto en WEB como en MÓVIL
+    print('🌐 LIMPIEZA SELECTIVA: Solo removiendo valores problemáticos de ubicación');
+    const locationFields = [
+      'latitude',
+      'longitude',
+      'location_address',
+      'direccion_real'
+    ];
 
-      for (final field in webLocationFields) {
-        if (cleaned[field] != null) {
-          print('🧹 Removiendo $field en web: ${cleaned[field]}');
+    for (final field in locationFields) {
+      if (cleaned[field] != null) {
+        final value = cleaned[field].toString();
+        print('Verificando campo $field: $value');
+
+        // Limpiar valores problemáticos específicos
+        if (value.contains('33.00000000') ||
+            value.contains('Lat:') ||
+            value.contains('Lng:') ||
+            value == '33.0' ||
+            value == '33') {
+          print('🧹 Removiendo $field problemático: $value');
           cleaned[field] = null;
-        }
-      }
-    } else {
-      // En MÓVIL, solo limpiar valores específicamente problemáticos
-      print('📱 PLATAFORMA MÓVIL: Limpieza selectiva de campos de ubicación');
-      const locationFields = [
-        'latitude',
-        'longitude',
-        'location_address',
-        'direccion_real'
-      ];
-
-      for (final field in locationFields) {
-        if (cleaned[field] != null) {
-          final value = cleaned[field].toString();
-          print('Verificando campo $field: $value');
-
-          // Limpiar valores problemáticos específicos
-          if (value.contains('33.00000000') ||
-              value.contains('Lat:') ||
-              value.contains('Lng:') ||
-              value == '33.0' ||
-              value == '33') {
-            print('Removiendo $field problemático: $value');
-            cleaned[field] = null;
-          }
+        } else {
+          print('✅ Preservando $field con valor válido: $value');
         }
       }
     }
+
 
     return cleaned;
   }
