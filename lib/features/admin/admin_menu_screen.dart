@@ -188,14 +188,6 @@ class AdminMenuScreen extends StatelessWidget {
           accentColor: AppColors.success,
           onTap: () => Navigator.of(context).pushNamed('/add-comercial'),
         ),
-        const SizedBox(height: 16),
-        MenuCard(
-          title: 'Gestión Global de Equipos',
-          subtitle: 'Ver y gestionar todos los equipos y usuarios',
-          icon: Icons.groups_outlined,
-          accentColor: AppColors.info,
-          onTap: () => Navigator.of(context).pushNamed('/global-team-management'),
-        ),
       ],
     );
   }
@@ -209,22 +201,6 @@ class AdminMenuScreen extends StatelessWidget {
           icon: Icons.download_outlined,
           accentColor: AppColors.warning,
           onTap: () => Navigator.of(context).pushNamed('/global-reports'),
-        ),
-        const SizedBox(height: 16),
-        MenuCard(
-          title: 'Análisis de Rendimiento',
-          subtitle: 'Estadísticas y métricas del sistema',
-          icon: Icons.analytics_outlined,
-          accentColor: AppColors.info,
-          onTap: () => Navigator.of(context).pushNamed('/analytics'),
-        ),
-        const SizedBox(height: 16),
-        MenuCard(
-          title: 'Logs del Sistema',
-          subtitle: 'Ver actividad y logs del sistema',
-          icon: Icons.history_outlined,
-          accentColor: AppColors.textSecondary,
-          onTap: () => Navigator.of(context).pushNamed('/system-logs'),
         ),
       ],
     );
