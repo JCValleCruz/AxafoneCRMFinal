@@ -261,11 +261,13 @@ class _FormScreenState extends State<FormScreen> {
     _latitudController.text = form.latitude?.toString() ?? '';
     _longitudController.text = form.longitude?.toString() ?? '';
 
-    // IMPORTANTE: Preservar direccion_real original para no perderla en la edición
-    // (latitude/longitude pueden perderse, pero direccion_real tiene la dirección legible)
+    // IMPORTANTE: Preservar datos de ubicación originales para no perderlos en la edición
+    _originalLatitude = form.latitude;
+    _originalLongitude = form.longitude;
+    _originalLocationAddress = form.locationAddress;
     _originalDireccionReal = form.direccionReal;
 
-    print('🔒 Dirección real original preservada: ${_originalDireccionReal}');
+    print('🔒 Datos originales preservados: lat=${_originalLatitude}, lng=${_originalLongitude}, direccionReal=${_originalDireccionReal}');
 
     // Datos comerciales
     _finPermanenciaController.text = form.finPermanencia ?? '';
@@ -1179,13 +1181,13 @@ class _FormScreenState extends State<FormScreen> {
         throw Exception('Usuario no autenticado');
       }
 
-      // En modo edición, preservar solo direccion_real (latitude/longitude pueden perderse)
+      // En modo edición, usar datos originales preservados
       final formSubmission = FormSubmission(
         userId: user.id,
         jefeEquipoId: user.bossId ?? user.id,
-        latitude: widget.isEditMode ? null : (_latitudController.text.isEmpty ? null : double.tryParse(_latitudController.text)),
-        longitude: widget.isEditMode ? null : (_longitudController.text.isEmpty ? null : double.tryParse(_longitudController.text)),
-        locationAddress: widget.isEditMode ? null : (_direccionRealController.text.isEmpty ? null : _direccionRealController.text),
+        latitude: widget.isEditMode ? _originalLatitude : (_latitudController.text.isEmpty ? null : double.tryParse(_latitudController.text)),
+        longitude: widget.isEditMode ? _originalLongitude : (_longitudController.text.isEmpty ? null : double.tryParse(_longitudController.text)),
+        locationAddress: widget.isEditMode ? _originalLocationAddress : (_direccionRealController.text.isEmpty ? null : _direccionRealController.text),
         cliente: _clienteController.text,
         cif: _cifController.text,
         direccion: _direccionController.text,
