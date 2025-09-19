@@ -31,6 +31,13 @@ class _FormScreenState extends State<FormScreen> {
   final int _totalSteps = 4;
   bool _isLoading = false;
   bool _isSubmitting = false; // Flag para prevenir múltiples envíos
+  int? _currentFormId; // ID del formulario en caso de edición
+
+  // Datos de ubicación originales para preservar en DELETE + CREATE
+  double? _originalLatitude;
+  double? _originalLongitude;
+  String? _originalLocationAddress;
+  String? _originalDireccionReal;
 
   // Form Controllers
   final _clienteController = TextEditingController();
@@ -190,6 +197,11 @@ class _FormScreenState extends State<FormScreen> {
       print('Calling ApiService.getFormById with: ${widget.clientId}');
       final form = await ApiService.getFormById(widget.clientId!);
       print('Form data received: ${form.cliente}, CIF: ${form.cif}');
+
+      // Capturar el ID del formulario para actualizaciones
+      _currentFormId = int.tryParse(widget.clientId!);
+      print('Captured form ID for editing: $_currentFormId');
+
       _populateForm(form);
     } catch (e) {
       if (mounted) {
@@ -1136,12 +1148,15 @@ class _FormScreenState extends State<FormScreen> {
         throw Exception('Usuario no autenticado');
       }
 
+      // En modo edición, omitir datos de ubicación para evitar problemas
+      final useLocationData = !widget.isEditMode;
+
       final formSubmission = FormSubmission(
         userId: user.id,
         jefeEquipoId: user.bossId ?? user.id,
-        latitude: _latitudController.text.isEmpty ? null : double.tryParse(_latitudController.text),
-        longitude: _longitudController.text.isEmpty ? null : double.tryParse(_longitudController.text),
-        locationAddress: _direccionRealController.text.isEmpty ? null : _direccionRealController.text,
+        latitude: useLocationData ? (_latitudController.text.isEmpty ? null : double.tryParse(_latitudController.text)) : null,
+        longitude: useLocationData ? (_longitudController.text.isEmpty ? null : double.tryParse(_longitudController.text)) : null,
+        locationAddress: useLocationData ? (_direccionRealController.text.isEmpty ? null : _direccionRealController.text) : null,
         cliente: _clienteController.text,
         cif: _cifController.text,
         direccion: _direccionController.text,
@@ -1150,7 +1165,7 @@ class _FormScreenState extends State<FormScreen> {
         contactoEsDecisor: _contactoEsDecisor,
         telefonoContacto: _telefonoContactoController.text,
         emailContacto: _emailContactoController.text,
-        direccionReal: _direccionRealController.text.isEmpty ? null : _direccionRealController.text,
+        direccionReal: useLocationData ? (_direccionRealController.text.isEmpty ? null : _direccionRealController.text) : null,
         finPermanencia: _finPermanenciaController.text.isEmpty ? null : _finPermanenciaController.text,
         sedesActuales: _sedesActualesController.text.isEmpty ? null : int.tryParse(_sedesActualesController.text),
         operadorActual: _operadorActualController.text.isEmpty ? null : _operadorActualController.text,
@@ -1175,12 +1190,23 @@ class _FormScreenState extends State<FormScreen> {
         admiteLlamadaNps: _admiteLlamadaNps,
       );
 
-      await ApiService.submitForm(formSubmission);
+      // Decidir si crear o actualizar según el modo
+      if (widget.isEditMode && _currentFormId != null) {
+        print('Updating existing form with ID: $_currentFormId');
+        await ApiService.updateForm(_currentFormId!, formSubmission);
+      } else {
+        print('Creating new form');
+        await ApiService.submitForm(formSubmission);
+      }
 
       if (mounted) {
+        final message = widget.isEditMode
+            ? 'Formulario actualizado correctamente'
+            : 'Formulario guardado correctamente';
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Formulario guardado correctamente'),
+          SnackBar(
+            content: Text(message),
             backgroundColor: AppColors.success,
           ),
         );

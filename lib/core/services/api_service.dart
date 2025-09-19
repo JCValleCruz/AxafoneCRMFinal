@@ -173,6 +173,42 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> updateForm(int formId, FormSubmission form) async {
+    try {
+      print('DEBUG updateForm: Usando PUT para actualizar formulario con ID: $formId');
+
+      final formJson = form.toJson();
+      final cleanedJson = <String, dynamic>{};
+
+      // Solo incluir campos que no sean null
+      formJson.forEach((key, value) {
+        if (value != null) {
+          cleanedJson[key] = value;
+        }
+      });
+
+      print('DEBUG updateForm: Enviando datos: $cleanedJson');
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/forms/$formId'),
+        headers: _headers,
+        body: jsonEncode(cleanedJson),
+      );
+
+      print('DEBUG updateForm: PUT status = ${response.statusCode}');
+      print('DEBUG updateForm: PUT response = ${response.body}');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Error al actualizar formulario - Status: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      print('DEBUG updateForm: Exception caught: $e');
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
   static Future<List<ClientSearchResult>> searchClients({
     String? cif,
     String? companyName,
