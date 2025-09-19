@@ -352,6 +352,18 @@ class ApiService {
           cleaned[field] = null;
         } else {
           print('✅ Preservando $field con valor válido: $value');
+
+          // Convertir latitude y longitude de string a double si es necesario
+          if ((field == 'latitude' || field == 'longitude') && cleaned[field] is String) {
+            try {
+              final doubleValue = double.parse(cleaned[field].toString());
+              cleaned[field] = doubleValue;
+              print('🔄 Convertido $field de string a double: $doubleValue');
+            } catch (e) {
+              print('❌ Error al convertir $field a double: $e');
+              cleaned[field] = null;
+            }
+          }
         }
       }
     }
