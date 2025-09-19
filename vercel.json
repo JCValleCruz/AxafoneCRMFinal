@@ -1,6 +1,8 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "buildCommand": "./build.sh",
+  "outputDirectory": "build/web",
   "rewrites": [
     {
       "source": "/(.*)",
