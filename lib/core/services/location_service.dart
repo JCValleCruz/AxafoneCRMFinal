@@ -1,4 +1,5 @@
 import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class LocationService {
@@ -56,5 +57,58 @@ class LocationService {
       return formatCoordinates(position);
     }
     return null;
+  }
+
+  /// Convierte coordenadas en una dirección legible usando geocoding reverso
+  static Future<String?> getAddressFromCoordinates(double latitude, double longitude) async {
+    try {
+      print('🗺️ Obteniendo dirección para: lat=$latitude, lng=$longitude');
+
+      List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+
+      if (placemarks.isNotEmpty) {
+        final placemark = placemarks.first;
+
+        // Construir dirección legible
+        final parts = <String>[];
+
+        if (placemark.street != null && placemark.street!.isNotEmpty) {
+          parts.add(placemark.street!);
+        }
+        if (placemark.subThoroughfare != null && placemark.subThoroughfare!.isNotEmpty) {
+          parts.add(placemark.subThoroughfare!);
+        }
+        if (placemark.locality != null && placemark.locality!.isNotEmpty) {
+          parts.add(placemark.locality!);
+        }
+        if (placemark.administrativeArea != null && placemark.administrativeArea!.isNotEmpty) {
+          parts.add(placemark.administrativeArea!);
+        }
+
+        final address = parts.isNotEmpty ? parts.join(', ') : 'Ubicación desconocida';
+        print('✅ Dirección obtenida: $address');
+        return address;
+      }
+
+      print('❌ No se encontraron placemarks');
+      return null;
+    } catch (e) {
+      print('❌ Error en geocoding reverso: $e');
+      return null;
+    }
+  }
+
+  /// Obtiene la posición actual y la convierte a dirección legible
+  static Future<String?> getCurrentAddress() async {
+    try {
+      final position = await getCurrentLocation();
+      if (position != null) {
+        return await getAddressFromCoordinates(position.latitude, position.longitude);
+      }
+      return null;
+    } catch (e) {
+      print('❌ Error obteniendo dirección actual: $e');
+      return null;
+    }
   }
 }

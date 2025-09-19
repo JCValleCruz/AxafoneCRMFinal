@@ -131,14 +131,39 @@ class _FormScreenState extends State<FormScreen> {
   }
 
   Future<void> _getCurrentLocation() async {
+    // Solo obtener ubicación para formularios nuevos, no para ediciones
+    if (widget.isEditMode) {
+      print('🔒 Modo edición: omitiendo obtención de ubicación');
+      return;
+    }
+
     try {
+      print('📍 Obteniendo ubicación actual para formulario nuevo...');
       final position = await LocationService.getCurrentLocation();
       if (position != null) {
         _latitudController.text = position.latitude.toString();
         _longitudController.text = position.longitude.toString();
-        _direccionRealController.text = LocationService.formatCoordinates(position);
+
+        // Usar geocoding reverso para obtener dirección legible
+        print('🗺️ Convirtiendo coordenadas a dirección legible...');
+        final address = await LocationService.getAddressFromCoordinates(
+          position.latitude,
+          position.longitude
+        );
+
+        if (address != null && address.isNotEmpty) {
+          _direccionRealController.text = address;
+          print('✅ Dirección establecida: $address');
+        } else {
+          // Fallback a coordenadas formateadas si no se puede obtener dirección
+          _direccionRealController.text = LocationService.formatCoordinates(position);
+          print('⚠️ Usando coordenadas como fallback');
+        }
+      } else {
+        print('❌ No se pudo obtener posición');
       }
     } catch (e) {
+      print('❌ Error al obtener ubicación: $e');
       // Error al obtener ubicación - continuar sin coordenadas
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -236,13 +261,11 @@ class _FormScreenState extends State<FormScreen> {
     _latitudController.text = form.latitude?.toString() ?? '';
     _longitudController.text = form.longitude?.toString() ?? '';
 
-    // IMPORTANTE: Preservar datos de ubicación originales para no perderlos en la edición
-    _originalLatitude = form.latitude;
-    _originalLongitude = form.longitude;
-    _originalLocationAddress = form.locationAddress;
+    // IMPORTANTE: Preservar direccion_real original para no perderla en la edición
+    // (latitude/longitude pueden perderse, pero direccion_real tiene la dirección legible)
     _originalDireccionReal = form.direccionReal;
 
-    print('🔒 Coordenadas originales preservadas: lat=${_originalLatitude}, lng=${_originalLongitude}');
+    print('🔒 Dirección real original preservada: ${_originalDireccionReal}');
 
     // Datos comerciales
     _finPermanenciaController.text = form.finPermanencia ?? '';
@@ -1156,13 +1179,13 @@ class _FormScreenState extends State<FormScreen> {
         throw Exception('Usuario no autenticado');
       }
 
-      // En modo edición, usar datos de ubicación originales preservados
+      // En modo edición, preservar solo direccion_real (latitude/longitude pueden perderse)
       final formSubmission = FormSubmission(
         userId: user.id,
         jefeEquipoId: user.bossId ?? user.id,
-        latitude: widget.isEditMode ? _originalLatitude : (_latitudController.text.isEmpty ? null : double.tryParse(_latitudController.text)),
-        longitude: widget.isEditMode ? _originalLongitude : (_longitudController.text.isEmpty ? null : double.tryParse(_longitudController.text)),
-        locationAddress: widget.isEditMode ? _originalLocationAddress : (_direccionRealController.text.isEmpty ? null : _direccionRealController.text),
+        latitude: widget.isEditMode ? null : (_latitudController.text.isEmpty ? null : double.tryParse(_latitudController.text)),
+        longitude: widget.isEditMode ? null : (_longitudController.text.isEmpty ? null : double.tryParse(_longitudController.text)),
+        locationAddress: widget.isEditMode ? null : (_direccionRealController.text.isEmpty ? null : _direccionRealController.text),
         cliente: _clienteController.text,
         cif: _cifController.text,
         direccion: _direccionController.text,
