@@ -127,32 +127,35 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildHeader() {
     return Column(
       children: [
-        // Logo Vodafone-inspired
+        // Logo de la empresa
         Container(
           width: 100,
           height: 100,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.primary,
-                AppColors.accentDark,
-              ],
-            ),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
-          child: const Icon(
-            Icons.phone_in_talk_rounded,
-            size: 50,
-            color: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Image.asset(
+              'assets/logo.png',
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                // Fallback al icono del teléfono si no se encuentra el logo
+                return const Icon(
+                  Icons.phone_in_talk_rounded,
+                  size: 50,
+                  color: AppColors.primary,
+                );
+              },
+            ),
           ),
         ),
 
