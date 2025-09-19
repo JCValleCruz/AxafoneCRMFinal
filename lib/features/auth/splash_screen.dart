@@ -124,10 +124,22 @@ class _SplashScreenState extends State<SplashScreen>
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.business_center_outlined,
-                        size: 60,
-                        color: AppColors.primary,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.asset(
+                          'assets/logo.png',
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            // Fallback al icono del maletín si no se encuentra el logo
+                            return const Icon(
+                              Icons.business_center_outlined,
+                              size: 60,
+                              color: AppColors.primary,
+                            );
+                          },
+                        ),
                       ),
                     ),
 
