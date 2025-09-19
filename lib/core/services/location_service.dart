@@ -64,13 +64,22 @@ class LocationService {
     try {
       print('🗺️ Obteniendo dirección para: lat=$latitude, lng=$longitude');
 
+      // Verificar si geocoding está disponible en la plataforma
       List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+      print('📍 Placemarks encontrados: ${placemarks.length}');
 
       if (placemarks.isNotEmpty) {
         final placemark = placemarks.first;
+        print('🏷️ Placemark: ${placemark.toString()}');
 
-        // Construir dirección legible
+        // Construir dirección legible con más información de debug
         final parts = <String>[];
+
+        print('🛣️ Street: ${placemark.street}');
+        print('🏠 SubThoroughfare (número): ${placemark.subThoroughfare}');
+        print('🏘️ Locality: ${placemark.locality}');
+        print('🏛️ Administrative Area: ${placemark.administrativeArea}');
+        print('🌍 Country: ${placemark.country}');
 
         if (placemark.street != null && placemark.street!.isNotEmpty) {
           parts.add(placemark.street!);
@@ -86,7 +95,7 @@ class LocationService {
         }
 
         final address = parts.isNotEmpty ? parts.join(', ') : 'Ubicación desconocida';
-        print('✅ Dirección obtenida: $address');
+        print('✅ Dirección final construida: $address');
         return address;
       }
 
@@ -94,6 +103,7 @@ class LocationService {
       return null;
     } catch (e) {
       print('❌ Error en geocoding reverso: $e');
+      print('❌ Tipo de error: ${e.runtimeType}');
       return null;
     }
   }

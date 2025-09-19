@@ -267,7 +267,11 @@ class _FormScreenState extends State<FormScreen> {
     _originalLocationAddress = form.locationAddress;
     _originalDireccionReal = form.direccionReal;
 
-    print('🔒 Datos originales preservados: lat=${_originalLatitude}, lng=${_originalLongitude}, direccionReal=${_originalDireccionReal}');
+    print('🔒 Datos originales preservados:');
+    print('   - Latitude: ${_originalLatitude}');
+    print('   - Longitude: ${_originalLongitude}');
+    print('   - LocationAddress: ${_originalLocationAddress}');
+    print('   - DireccionReal: "${_originalDireccionReal}"');
 
     // Datos comerciales
     _finPermanenciaController.text = form.finPermanencia ?? '';
@@ -1182,6 +1186,14 @@ class _FormScreenState extends State<FormScreen> {
       }
 
       // En modo edición, usar datos originales preservados
+      if (widget.isEditMode) {
+        print('📝 Modo edición - usando datos originales:');
+        print('   - Latitude: ${_originalLatitude}');
+        print('   - Longitude: ${_originalLongitude}');
+        print('   - LocationAddress: ${_originalLocationAddress}');
+        print('   - DireccionReal: "${_originalDireccionReal}"');
+      }
+
       final formSubmission = FormSubmission(
         userId: user.id,
         jefeEquipoId: user.bossId ?? user.id,
