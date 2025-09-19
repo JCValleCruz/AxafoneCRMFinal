@@ -123,15 +123,6 @@ class JefeMenuScreen extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // Team Management
-        MenuCard(
-          title: 'Gestión de Equipo',
-          subtitle: 'Ver y gestionar miembros del equipo',
-          icon: Icons.group_outlined,
-          accentColor: AppColors.warning,
-          onTap: () => Navigator.of(context).pushNamed('/team-management'),
-        ),
-        const SizedBox(height: 16),
 
         // Change Password
         MenuCard(

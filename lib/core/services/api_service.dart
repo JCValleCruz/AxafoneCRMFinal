@@ -67,7 +67,27 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        return data.map((json) => User.fromJson(json)).toList();
+
+        final users = <User>[];
+        for (final userJson in data) {
+          try {
+            // Limpiar datos nulls
+            final cleanData = Map<String, dynamic>.from(userJson);
+            cleanData['email'] ??= 'sin-email@temp.com';
+            cleanData['name'] ??= 'Usuario sin nombre';
+            cleanData['role'] ??= 'COMERCIAL';
+            cleanData['isActive'] ??= 1;
+            cleanData['createdAt'] ??= DateTime.now().toIso8601String();
+            cleanData['updatedAt'] ??= DateTime.now().toIso8601String();
+
+            users.add(User.fromJson(cleanData));
+          } catch (e) {
+            // Ignorar usuarios problemáticos y continuar
+            continue;
+          }
+        }
+
+        return users;
       } else {
         throw Exception('Error al obtener equipo');
       }

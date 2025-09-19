@@ -10,9 +10,17 @@ class User {
   final String role;
   final String? tipo;
   final int? bossId;
+  @JsonKey(fromJson: _boolFromJson)
   final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  static bool _boolFromJson(dynamic value) {
+    if (value is bool) return value;
+    if (value is int) return value == 1;
+    if (value is String) return value.toLowerCase() == 'true' || value == '1';
+    return false;
+  }
 
   const User({
     required this.id,

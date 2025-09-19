@@ -4,6 +4,7 @@ import '../../core/services/api_service.dart';
 import '../../core/services/session_service.dart';
 import '../../core/services/download_service.dart';
 import '../../shared/widgets/form_field_wrapper.dart';
+import '../../shared/models/user.dart';
 
 class ReportsScreen extends StatefulWidget {
   final bool isGlobal;
@@ -23,12 +24,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
   final _endDateController = TextEditingController();
 
   bool _isLoading = false;
+  bool _isLoadingTeam = false;
   Map<String, dynamic>? _reportData;
+  List<User> _teamMembers = [];
+  User? _selectedComercial;
 
   @override
   void initState() {
     super.initState();
     _initializeDates();
+    _loadTeamMembers();
   }
 
   void _initializeDates() {
@@ -38,6 +43,35 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     _startDateController.text = _formatDate(firstDayOfMonth);
     _endDateController.text = _formatDate(lastDayOfMonth);
+  }
+
+  Future<void> _loadTeamMembers() async {
+    if (widget.isGlobal) return; // No cargar equipo para reportes globales
+
+    final user = SessionService.currentUser;
+    if (user == null || !user.isJefeEquipo) return;
+
+    setState(() => _isLoadingTeam = true);
+
+    try {
+      final members = await ApiService.getTeamMembers(user.id);
+      setState(() {
+        _teamMembers = members;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar equipo: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingTeam = false);
+      }
+    }
   }
 
   @override
@@ -111,12 +145,25 @@ class _ReportsScreenState extends State<ReportsScreen> {
         comercialId = user.id;
       }
 
+      // Si hay un comercial seleccionado, usar su ID
+      if (_selectedComercial != null) {
+        comercialId = _selectedComercial!.id;
+      }
+
+      print('DEBUG: Llamando a ApiService.getReports con:');
+      print('DEBUG: jefeEquipoId: $jefeEquipoId');
+      print('DEBUG: comercialId: $comercialId');
+      print('DEBUG: fechaInicio: ${_startDateController.text}');
+      print('DEBUG: fechaFin: ${_endDateController.text}');
+
       final data = await ApiService.getReports(
         jefeEquipoId: jefeEquipoId,
         comercialId: comercialId,
         fechaInicio: _startDateController.text, // DD/MM/YYYY format
         fechaFin: _endDateController.text,      // DD/MM/YYYY format
       );
+
+      print('DEBUG: Respuesta de ApiService.getReports: $data');
 
       setState(() {
         _reportData = data;
@@ -291,6 +338,39 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ),
               ),
             ),
+
+            // Commercial Filter (only for team leaders)
+            if (!widget.isGlobal && _teamMembers.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              FormFieldWrapper(
+                label: 'Filtrar por Comercial',
+                required: false,
+                child: DropdownButtonFormField<User>(
+                  value: _selectedComercial,
+                  decoration: const InputDecoration(
+                    hintText: 'Todos los comerciales',
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                  items: [
+                    const DropdownMenuItem<User>(
+                      value: null,
+                      child: Text('Todos los comerciales'),
+                    ),
+                    ..._teamMembers.map((comercial) {
+                      return DropdownMenuItem<User>(
+                        value: comercial,
+                        child: Text(comercial.name),
+                      );
+                    }),
+                  ],
+                  onChanged: (User? value) {
+                    setState(() {
+                      _selectedComercial = value;
+                    });
+                  },
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -329,10 +409,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
         final dateRange = '${_startDateController.text.replaceAll('/', '-')}_${_endDateController.text.replaceAll('/', '-')}';
         final timestamp = DateTime.now().millisecondsSinceEpoch;
 
-        final filename = 'Reporte_${teamName}_${dateRange}_$timestamp.json';
+        final filename = 'Reporte_${teamName}_${dateRange}_$timestamp.xlsx';
 
-        // Descargar como JSON
-        DownloadService.downloadJSON(
+        // Verificar que los datos no estén vacíos
+        if (_reportData!.isEmpty) {
+          throw Exception('Los datos del reporte están vacíos');
+        }
+
+        // Descargar como XLSX
+        DownloadService.downloadXLSX(
           data: _reportData!,
           filename: filename,
         );
