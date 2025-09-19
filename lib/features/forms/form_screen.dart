@@ -236,6 +236,14 @@ class _FormScreenState extends State<FormScreen> {
     _latitudController.text = form.latitude?.toString() ?? '';
     _longitudController.text = form.longitude?.toString() ?? '';
 
+    // IMPORTANTE: Preservar datos de ubicación originales para no perderlos en la edición
+    _originalLatitude = form.latitude;
+    _originalLongitude = form.longitude;
+    _originalLocationAddress = form.locationAddress;
+    _originalDireccionReal = form.direccionReal;
+
+    print('🔒 Coordenadas originales preservadas: lat=${_originalLatitude}, lng=${_originalLongitude}');
+
     // Datos comerciales
     _finPermanenciaController.text = form.finPermanencia ?? '';
     _sedesActualesController.text = form.sedesActuales?.toString() ?? '';
@@ -1148,15 +1156,13 @@ class _FormScreenState extends State<FormScreen> {
         throw Exception('Usuario no autenticado');
       }
 
-      // En modo edición, omitir datos de ubicación para evitar problemas
-      final useLocationData = !widget.isEditMode;
-
+      // En modo edición, usar datos de ubicación originales preservados
       final formSubmission = FormSubmission(
         userId: user.id,
         jefeEquipoId: user.bossId ?? user.id,
-        latitude: useLocationData ? (_latitudController.text.isEmpty ? null : double.tryParse(_latitudController.text)) : null,
-        longitude: useLocationData ? (_longitudController.text.isEmpty ? null : double.tryParse(_longitudController.text)) : null,
-        locationAddress: useLocationData ? (_direccionRealController.text.isEmpty ? null : _direccionRealController.text) : null,
+        latitude: widget.isEditMode ? _originalLatitude : (_latitudController.text.isEmpty ? null : double.tryParse(_latitudController.text)),
+        longitude: widget.isEditMode ? _originalLongitude : (_longitudController.text.isEmpty ? null : double.tryParse(_longitudController.text)),
+        locationAddress: widget.isEditMode ? _originalLocationAddress : (_direccionRealController.text.isEmpty ? null : _direccionRealController.text),
         cliente: _clienteController.text,
         cif: _cifController.text,
         direccion: _direccionController.text,
@@ -1165,7 +1171,7 @@ class _FormScreenState extends State<FormScreen> {
         contactoEsDecisor: _contactoEsDecisor,
         telefonoContacto: _telefonoContactoController.text,
         emailContacto: _emailContactoController.text,
-        direccionReal: useLocationData ? (_direccionRealController.text.isEmpty ? null : _direccionRealController.text) : null,
+        direccionReal: widget.isEditMode ? _originalDireccionReal : (_direccionRealController.text.isEmpty ? null : _direccionRealController.text),
         finPermanencia: _finPermanenciaController.text.isEmpty ? null : _finPermanenciaController.text,
         sedesActuales: _sedesActualesController.text.isEmpty ? null : int.tryParse(_sedesActualesController.text),
         operadorActual: _operadorActualController.text.isEmpty ? null : _operadorActualController.text,
